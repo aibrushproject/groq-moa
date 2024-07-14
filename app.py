@@ -77,43 +77,50 @@ def stream_response(messages: Iterable[ResponseChunk]):
                 cols = st.columns(len(outputs))
                 for i, output in enumerate(outputs):
                     with cols[i]:
-                        st.expander(label=f"Agent {i+1}", expanded=False).write(output)
-            
+                        st.expander(
+                            label=f"Agent {i + 1}", expanded=False).write(output)
+
             # Clear layer outputs for the next iteration
             layer_outputs = {}
-            
+
             # Yield the main agent's output
             yield message['delta']
+
 
 def set_moa_agent(
     main_model: str = default_config['main_model'],
     cycles: int = default_config['cycles'],
-    layer_agent_config: dict[dict[str, any]] = copy.deepcopy(layer_agent_config_def),
+    layer_agent_config: dict[dict[str, any]
+                             ] = copy.deepcopy(layer_agent_config_def),
     main_model_temperature: float = 0.1,
     override: bool = False
 ):
     if override or ("main_model" not in st.session_state):
         st.session_state.main_model = main_model
     else:
-        if "main_model" not in st.session_state: st.session_state.main_model = main_model 
+        if "main_model" not in st.session_state:
+            st.session_state.main_model = main_model
 
     if override or ("cycles" not in st.session_state):
         st.session_state.cycles = cycles
     else:
-        if "cycles" not in st.session_state: st.session_state.cycles = cycles
+        if "cycles" not in st.session_state:
+            st.session_state.cycles = cycles
 
     if override or ("layer_agent_config" not in st.session_state):
         st.session_state.layer_agent_config = layer_agent_config
     else:
-        if "layer_agent_config" not in st.session_state: st.session_state.layer_agent_config = layer_agent_config
+        if "layer_agent_config" not in st.session_state:
+            st.session_state.layer_agent_config = layer_agent_config
 
     if override or ("main_temp" not in st.session_state):
         st.session_state.main_temp = main_model_temperature
     else:
-        if "main_temp" not in st.session_state: st.session_state.main_temp = main_model_temperature
+        if "main_temp" not in st.session_state:
+            st.session_state.main_temp = main_model_temperature
 
     cls_ly_conf = copy.deepcopy(st.session_state.layer_agent_config)
-    
+
     if override or ("moa_agent" not in st.session_state):
         st.session_state.moa_agent = MOAgent.from_config(
             main_model=st.session_state.main_model,
@@ -125,10 +132,11 @@ def set_moa_agent(
     del cls_ly_conf
     del layer_agent_config
 
+
 st.set_page_config(
     page_title="Mixture-Of-Agents Powered by Groq",
     page_icon='static/favicon.ico',
-        menu_items={
+    menu_items={
         'About': "## Groq Mixture-Of-Agents \n Powered by [Groq](https://groq.com)"
     },
     layout="wide"
@@ -141,9 +149,9 @@ valid_model_names = [
     'mixtral-8x7b-32768'
 ]
 
-st.markdown("<a href='https://groq.com'><img src='app/static/banner.png' width='500'></a>", unsafe_allow_html=True)
+st.markdown("<a href='https://groq.com'><img src='app/static/banner.png' width='500'></a>",
+            unsafe_allow_html=True)
 st.write("---")
-
 
 
 # Initialize session state
@@ -168,7 +176,8 @@ with st.sidebar:
                 st.session_state.messages = []
                 st.success("Configuration updated successfully!")
             except json.JSONDecodeError:
-                st.error("Invalid JSON in Layer Agent Configuration. Please check your input.")
+                st.error(
+                    "Invalid JSON in Layer Agent Configuration. Please check your input.")
             except Exception as e:
                 st.error(f"Error updating configuration: {str(e)}")
         # Main model selection
@@ -220,7 +229,8 @@ with st.sidebar:
                 st.session_state.messages = []
                 st.success("Configuration updated successfully!")
             except json.JSONDecodeError:
-                st.error("Invalid JSON in Layer Agent Configuration. Please check your input.")
+                st.error(
+                    "Invalid JSON in Layer Agent Configuration. Please check your input.")
             except Exception as e:
                 st.error(f"Error updating configuration: {str(e)}")
 
@@ -235,14 +245,17 @@ with st.sidebar:
 # Main app layout
 st.header("Mixture of Agents", anchor=False)
 st.write("A demo of the Mixture of Agents architecture proposed by Together AI, Powered by Groq LLMs.")
-st.image("./static/moa_groq.svg", caption="Mixture of Agents Workflow", width=1000)
+st.image("./static/moa_groq.svg",
+         caption="Mixture of Agents Workflow", width=1000)
 
 # Display current configuration
 with st.expander("Current MOA Configuration", expanded=False):
     st.markdown(f"**Main Model**: ``{st.session_state.main_model}``")
-    st.markdown(f"**Main Model Temperature**: ``{st.session_state.main_temp:.1f}``")
+    st.markdown(
+        f"**Main Model Temperature**: ``{st.session_state.main_temp:.1f}``")
     st.markdown(f"**Layers**: ``{st.session_state.cycles}``")
-    st.markdown(f"**Layer Agents Config**:")
+    st.markdown(
+        f"**Layer Agents Config**: {st.session_state.layer_agent_config}")
     new_layer_agent_config = st_ace(
         value=json.dumps(st.session_state.layer_agent_config, indent=2),
         language='json',
@@ -268,5 +281,6 @@ if query := st.chat_input("Ask a question"):
         message_placeholder = st.empty()
         ast_mess = stream_response(moa_agent.chat(query, output_format='json'))
         response = st.write_stream(ast_mess)
-    
-    st.session_state.messages.append({"role": "assistant", "content": response})
+
+    st.session_state.messages.append(
+        {"role": "assistant", "content": response})

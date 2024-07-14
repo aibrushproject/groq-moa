@@ -22,6 +22,7 @@ valid_model_names = Literal[
     'mixtral-8x7b-32768'
 ]
 
+
 class ResponseChunk(TypedDict):
     delta: str
     response_type: Literal['intermediate', 'output']
@@ -96,20 +97,20 @@ class MOAgent:
     ) -> RunnableSerializable[Dict, Dict]:
         if not layer_agent_config:
             layer_agent_config = {
-                'layer_agent_1' : {'system_prompt': SYSTEM_PROMPT, 'model_name': 'llama3-8b-8192'},
-                'layer_agent_2' : {'system_prompt': SYSTEM_PROMPT, 'model_name': 'gemma-7b-it'},
-                'layer_agent_3' : {'system_prompt': SYSTEM_PROMPT, 'model_name': 'mixtral-8x7b-32768'}
+                'layer_agent_1': {'system_prompt': SYSTEM_PROMPT, 'model_name': 'llama3-8b-8192'},
+                'layer_agent_2': {'system_prompt': SYSTEM_PROMPT, 'model_name': 'gemma-7b-it'},
+                'layer_agent_3': {'system_prompt': SYSTEM_PROMPT, 'model_name': 'mixtral-8x7b-32768'}
             }
 
         parallel_chain_map = dict()
         for key, value in layer_agent_config.items():
             chain = MOAgent._create_agent_from_system_prompt(
-                system_prompt=value.pop("system_prompt", SYSTEM_PROMPT), 
+                system_prompt=value.pop("system_prompt", SYSTEM_PROMPT),
                 model_name=value.pop("model_name", 'llama3-8b-8192'),
                 **value
             )
             parallel_chain_map[key] = RunnablePassthrough() | chain
-        
+
         chain = parallel_chain_map | RunnableLambda(MOAgent.concat_response)
         return chain
 
@@ -127,12 +128,12 @@ class MOAgent:
 
         assert 'helper_response' in prompt.input_variables
         llm = ChatGroq(model=model_name, **llm_kwargs)
-        
+
         chain = prompt | llm | StrOutputParser()
         return chain
 
     def chat(
-        self, 
+        self,
         input: str,
         messages: Optional[List[BaseMessage]] = None,
         cycles: Optional[int] = None,
@@ -149,7 +150,7 @@ class MOAgent:
             layer_output = self.layer_agent.invoke(llm_inp)
             l_frm_resp = layer_output['formatted_response']
             l_resps = layer_output['responses']
-            
+
             llm_inp = {
                 'input': input,
                 'messages': self.chat_memory.load_memory_variables({})['messages'],
@@ -168,14 +169,15 @@ class MOAgent:
         response = ""
         for chunk in stream:
             if output_format == 'json':
-                    yield ResponseChunk(
-                        delta=chunk,
-                        response_type='output',
-                        metadata={}
-                    )
+                yield ResponseChunk(
+                    delta=chunk,
+                    response_type='output',
+                    metadata={}
+                )
             else:
                 yield chunk
             response += chunk
 
         if save:
-            self.chat_memory.save_context({'input': input}, {'output': response})
+            self.chat_memory.save_context(
+                {'input': input}, {'output': response})
